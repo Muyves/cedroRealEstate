@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Build output
+frontend/dist/
+
+# Environment files (contains secrets)
+.env
+.env.local
+frontend/.env
+frontend/.env.local
+
+# Python
+backend/.venv/
+backend/__pycache__/
+backend/app/**/__pycache__/
+*.pyc
+*.pyo
+
+# Database (SQLite)
+*.db
+
+# Uploads (user-uploaded files — don't commit binary files)
+backend/uploads/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

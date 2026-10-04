@@ -19,6 +19,7 @@ import {
   AlignRight,
   AlignLeft,
   Languages,
+  Headphones,
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -153,6 +154,10 @@ export default function Navbar() {
               <Building2 className="w-4 h-4 text-[#1a2744] dark:text-slate-300" />
               <span>{t.buildingsHomes}</span>
             </NavLink>
+            <NavLink to="/support" className={navLinkClass}>
+              <Headphones className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span>{t.contactSupport}</span>
+            </NavLink>
           </nav>
 
           {/* Right section */}
@@ -254,6 +259,9 @@ export default function Navbar() {
           </NavLink>
           <NavLink to="/listings?category=building" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 py-2 px-3 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium">
             <Building2 className="w-4 h-4" /> {t.buildingsHomes}
+          </NavLink>
+          <NavLink to="/support" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 py-2 px-3 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium">
+            <Headphones className="w-4 h-4 text-emerald-600" /> {t.contactSupport}
           </NavLink>
 
           {/* Mobile RTL toggle */}

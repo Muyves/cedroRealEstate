@@ -17,6 +17,7 @@ import BuyerDashboard from './pages/BuyerDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import SupportPage from './pages/SupportPage';
 
 export default function App() {
   return (
@@ -29,6 +30,7 @@ export default function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/listings" element={<ListingsPage />} />
               <Route path="/listings/:id" element={<ListingDetailPage />} />
+              <Route path="/support" element={<SupportPage />} />
 
               {/* Role Protected Routes */}
               <Route

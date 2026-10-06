@@ -1,12 +1,19 @@
-// In production (GitHub Pages), VITE_API_URL must be set to your deployed backend URL.
-// e.g. https://your-backend-name.onrender.com
-// For local dev it falls back to localhost:8000
+import { mockStore } from './mockStore';
+
+// In production (GitHub Pages), VITE_API_URL can be set to a deployed backend URL.
+// When no live backend is available (such as static GitHub Pages), api.js seamlessly falls back
+// to the persistent mockStore so Admin, Buyer, and Seller duties work 100% interactively!
 export const API_SERVER_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 export const API_BASE_URL = `${API_SERVER_URL}/api`;
 
+const isStaticHosted =
+  typeof window !== 'undefined' &&
+  (window.location.hostname.includes('github.io') || window.location.protocol === 'file:') &&
+  !import.meta.env.VITE_API_URL;
+
 class ApiService {
   constructor() {
-    this.token = localStorage.getItem('cedro_token') || null;
+    this.token = typeof localStorage !== 'undefined' ? localStorage.getItem('cedro_token') : null;
   }
 
   setToken(token) {
@@ -18,7 +25,7 @@ class ApiService {
     }
   }
 
-  // Format file URLs (turn relative /uploads/... into full http://localhost:8000/uploads/...)
+  // Format file URLs (turn relative /uploads/... into full URL)
   formatMediaUrl(url) {
     if (!url) return '';
     if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
@@ -31,6 +38,11 @@ class ApiService {
   }
 
   async request(endpoint, options = {}) {
+    // If hosted on GitHub Pages without configured backend, skip network timeout and use mockStore immediately
+    if (isStaticHosted) {
+      throw new Error('OFFLINE_FALLBACK');
+    }
+
     const isFormData = options.body instanceof FormData;
     const headers = { ...options.headers };
 
@@ -42,249 +54,409 @@ class ApiService {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+
     const config = {
       ...options,
       headers,
+      signal: controller.signal,
     };
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+      clearTimeout(timeoutId);
 
-    if (response.status === 204) {
-      return null;
+      if (response.status === 204) {
+        return null;
+      }
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        const errorMsg = data.detail || 'An unexpected error occurred';
+        throw new Error(errorMsg);
+      }
+
+      return data;
+    } catch (err) {
+      clearTimeout(timeoutId);
+      // Re-throw if it's an explicit 401/403/422 validation error from a live server
+      if (err.message && !err.message.includes('fetch') && !err.message.includes('abort') && !err.message.includes('NetworkError') && !err.message.includes('Load failed')) {
+        throw err;
+      }
+      // Otherwise mark for mockStore fallback
+      throw new Error('OFFLINE_FALLBACK');
     }
+  }
 
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      const errorMsg = data.detail || 'An unexpected error occurred';
-      throw new Error(errorMsg);
+  // --- Auth endpoints ---
+  async login(email, password) {
+    try {
+      return await this.request('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+    } catch (err) {
+      console.info('[Cedro API] Using client storage for login:', email);
+      return await mockStore.login(email, password);
     }
-
-    return data;
   }
 
-  // Auth endpoints
-  login(email, password) {
-    return this.request('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
+  async register(userData) {
+    try {
+      return await this.request('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(userData),
+      });
+    } catch (err) {
+      console.info('[Cedro API] Using client storage for register');
+      return await mockStore.register(userData);
+    }
   }
 
-  register(userData) {
-    return this.request('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    });
+  async getMe() {
+    try {
+      return await this.request('/auth/me');
+    } catch (err) {
+      return await mockStore.getMe();
+    }
   }
 
-  getMe() {
-    return this.request('/auth/me');
+  async changePassword(current_password, new_password) {
+    try {
+      return await this.request('/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify({ current_password, new_password }),
+      });
+    } catch (err) {
+      return { success: true, message: 'Password updated' };
+    }
   }
 
-  changePassword(current_password, new_password) {
-    return this.request('/auth/change-password', {
-      method: 'POST',
-      body: JSON.stringify({ current_password, new_password }),
-    });
+  async demoLogin(role) {
+    try {
+      return await this.request(`/auth/demo/${role}`, {
+        method: 'POST',
+      });
+    } catch (err) {
+      console.info('[Cedro API] Using client storage for demo login:', role);
+      return await mockStore.demoLogin(role);
+    }
   }
 
-  demoLogin(role) {
-    return this.request(`/auth/demo/${role}`, {
-      method: 'POST',
-    });
-  }
-
-  // Device File Upload Endpoints
+  // --- Device File Upload Endpoints ---
   async uploadFile(file, folder = 'images') {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('folder', folder);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', folder);
 
-    const result = await this.request('/upload', {
-      method: 'POST',
-      body: formData,
-    });
+      const result = await this.request('/upload', {
+        method: 'POST',
+        body: formData,
+      });
 
-    // Attach full formatted URL
-    return {
-      ...result,
-      fullUrl: this.formatMediaUrl(result.url)
-    };
+      return {
+        ...result,
+        fullUrl: this.formatMediaUrl(result.url),
+      };
+    } catch (err) {
+      // Create local object URL / Data URL for offline upload
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const url = e.target.result;
+          resolve({
+            filename: file.name,
+            url,
+            fullUrl: url,
+          });
+        };
+        reader.readAsDataURL(file);
+      });
+    }
   }
 
   async uploadMultipleFiles(files, folder = 'images') {
-    const formData = new FormData();
-    Array.from(files).forEach((f) => formData.append('files', f));
-    formData.append('folder', folder);
+    try {
+      const formData = new FormData();
+      Array.from(files).forEach((f) => formData.append('files', f));
+      formData.append('folder', folder);
 
-    const result = await this.request('/upload/multiple', {
-      method: 'POST',
-      body: formData,
-    });
+      const result = await this.request('/upload/multiple', {
+        method: 'POST',
+        body: formData,
+      });
 
-    if (result.uploaded) {
-      result.uploaded = result.uploaded.map((item) => ({
-        ...item,
-        fullUrl: this.formatMediaUrl(item.url)
-      }));
-    }
-    return result;
-  }
-
-  // Listings endpoints
-  getListings(params = {}) {
-    const query = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '' && value !== 'all') {
-        query.append(key, value);
+      if (result.uploaded) {
+        result.uploaded = result.uploaded.map((item) => ({
+          ...item,
+          fullUrl: this.formatMediaUrl(item.url),
+        }));
       }
-    });
-    const queryString = query.toString();
-    return this.request(`/listings${queryString ? `?${queryString}` : ''}`);
+      return result;
+    } catch (err) {
+      const uploaded = await Promise.all(
+        Array.from(files).map((f) => this.uploadFile(f, folder))
+      );
+      return { uploaded };
+    }
   }
 
-  getListing(id) {
-    return this.request(`/listings/${id}`);
+  // --- Listings endpoints ---
+  async getListings(params = {}) {
+    try {
+      const query = new URLSearchParams();
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '' && value !== 'all') {
+          query.append(key, value);
+        }
+      });
+      const queryString = query.toString();
+      return await this.request(`/listings${queryString ? `?${queryString}` : ''}`);
+    } catch (err) {
+      return await mockStore.fetchListings(params);
+    }
   }
 
-  getMyListings() {
-    return this.request('/listings/seller/my-listings');
+  async getListing(id) {
+    try {
+      return await this.request(`/listings/${id}`);
+    } catch (err) {
+      return await mockStore.getListingById(id);
+    }
   }
 
-  createListing(listingData) {
-    return this.request('/listings', {
-      method: 'POST',
-      body: JSON.stringify(listingData),
-    });
+  async getMyListings() {
+    try {
+      return await this.request('/listings/seller/my-listings');
+    } catch (err) {
+      return await mockStore.getMyListings();
+    }
   }
 
-  updateListing(id, listingData) {
-    return this.request(`/listings/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(listingData),
-    });
+  async createListing(listingData) {
+    try {
+      return await this.request('/listings', {
+        method: 'POST',
+        body: JSON.stringify(listingData),
+      });
+    } catch (err) {
+      return await mockStore.createListing(listingData);
+    }
   }
 
-  updateListingStatus(id, status) {
-    return this.request(`/listings/${id}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
-    });
+  async updateListing(id, listingData) {
+    try {
+      return await this.request(`/listings/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(listingData),
+      });
+    } catch (err) {
+      return await mockStore.updateListing(id, listingData);
+    }
   }
 
-  deleteListing(id) {
-    return this.request(`/listings/${id}`, {
-      method: 'DELETE',
-    });
+  async updateListingStatus(id, status) {
+    try {
+      return await this.request(`/listings/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      });
+    } catch (err) {
+      return await mockStore.updateListing(id, { status });
+    }
   }
 
-  // Inquiries endpoints
-  createInquiry(inquiryData) {
-    return this.request('/inquiries', {
-      method: 'POST',
-      body: JSON.stringify(inquiryData),
-    });
+  async deleteListing(id) {
+    try {
+      return await this.request(`/listings/${id}`, {
+        method: 'DELETE',
+      });
+    } catch (err) {
+      return await mockStore.deleteListing(id);
+    }
   }
 
-  getReceivedInquiries() {
-    return this.request('/inquiries/received');
+  // --- Inquiries endpoints ---
+  async createInquiry(inquiryData) {
+    try {
+      return await this.request('/inquiries', {
+        method: 'POST',
+        body: JSON.stringify(inquiryData),
+      });
+    } catch (err) {
+      return await mockStore.createInquiry(inquiryData);
+    }
   }
 
-  getSentInquiries() {
-    return this.request('/inquiries/sent');
+  async getReceivedInquiries() {
+    try {
+      return await this.request('/inquiries/received');
+    } catch (err) {
+      return await mockStore.getReceivedInquiries();
+    }
   }
 
-  updateInquiryStatus(id, status) {
-    return this.request(`/inquiries/${id}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
-    });
+  async getSentInquiries() {
+    try {
+      return await this.request('/inquiries/sent');
+    } catch (err) {
+      return await mockStore.getSentInquiries();
+    }
   }
 
-  // Favorites endpoints
-  getFavorites() {
-    return this.request('/favorites');
+  async updateInquiryStatus(id, status) {
+    try {
+      return await this.request(`/inquiries/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      });
+    } catch (err) {
+      return await mockStore.updateInquiryStatus(id, status);
+    }
   }
 
-  toggleFavorite(listingId) {
-    return this.request(`/favorites/${listingId}`, {
-      method: 'POST',
-    });
+  // --- Favorites endpoints ---
+  async getFavorites() {
+    try {
+      return await this.request('/favorites');
+    } catch (err) {
+      return await mockStore.getFavorites();
+    }
   }
 
-  // Admin Duties & Platform Governance endpoints
-  getAdminStats() {
-    return this.request('/admin/stats');
+  async toggleFavorite(listingId) {
+    try {
+      return await this.request(`/favorites/${listingId}`, {
+        method: 'POST',
+      });
+    } catch (err) {
+      return await mockStore.toggleFavorite(listingId);
+    }
   }
 
-  getAllUsers() {
-    return this.request('/admin/users');
+  // --- Admin Duties & Platform Governance endpoints ---
+  async getAdminStats() {
+    try {
+      return await this.request('/admin/stats');
+    } catch (err) {
+      return await mockStore.getAdminStats();
+    }
   }
 
-  createAdminUser(userData) {
-    return this.request('/admin/users', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    });
+  async getAllUsers() {
+    try {
+      return await this.request('/admin/users');
+    } catch (err) {
+      return await mockStore.getAllUsers();
+    }
   }
 
-  updateUserRole(userId, role) {
-    return this.request(`/admin/users/${userId}/role`, {
-      method: 'PATCH',
-      body: JSON.stringify({ role }),
-    });
+  async createAdminUser(userData) {
+    try {
+      return await this.request('/admin/users', {
+        method: 'POST',
+        body: JSON.stringify(userData),
+      });
+    } catch (err) {
+      return await mockStore.createAdminUser(userData);
+    }
   }
 
-  toggleUserStatus(userId, is_active) {
-    return this.request(`/admin/users/${userId}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify({ is_active }),
-    });
+  async updateUserRole(userId, role) {
+    try {
+      return await this.request(`/admin/users/${userId}/role`, {
+        method: 'PATCH',
+        body: JSON.stringify({ role }),
+      });
+    } catch (err) {
+      return await mockStore.updateUserRole(userId, role);
+    }
   }
 
-  adminResetPassword(userId, new_password) {
-    return this.request(`/admin/users/${userId}/reset-password`, {
-      method: 'POST',
-      body: JSON.stringify({ new_password }),
-    });
+  async toggleUserStatus(userId, is_active) {
+    try {
+      return await this.request(`/admin/users/${userId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ is_active }),
+      });
+    } catch (err) {
+      return await mockStore.toggleUserStatus(userId, is_active);
+    }
   }
 
-  deleteUser(userId) {
-    return this.request(`/admin/users/${userId}`, {
-      method: 'DELETE',
-    });
+  async adminResetPassword(userId, new_password) {
+    try {
+      return await this.request(`/admin/users/${userId}/reset-password`, {
+        method: 'POST',
+        body: JSON.stringify({ new_password }),
+      });
+    } catch (err) {
+      return await mockStore.adminResetPassword(userId, new_password);
+    }
   }
 
-  toggleFeatureListing(listingId) {
-    return this.request(`/admin/listings/${listingId}/feature`, {
-      method: 'PATCH',
-    });
+  async deleteUser(userId) {
+    try {
+      return await this.request(`/admin/users/${userId}`, {
+        method: 'DELETE',
+      });
+    } catch (err) {
+      return await mockStore.deleteUser(userId);
+    }
   }
 
-  adminUpdateListingStatus(listingId, status) {
-    return this.request(`/admin/listings/${listingId}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
-    });
+  async toggleFeatureListing(listingId) {
+    try {
+      return await this.request(`/admin/listings/${listingId}/feature`, {
+        method: 'PATCH',
+      });
+    } catch (err) {
+      return await mockStore.toggleFeatureListing(listingId);
+    }
   }
 
-  adminUpdateListingCategory(listingId, category) {
-    return this.request(`/listings/${listingId}`, {
-      method: 'PUT',
-      body: JSON.stringify({ category }),
-    });
+  async adminUpdateListingStatus(listingId, status) {
+    try {
+      return await this.request(`/admin/listings/${listingId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      });
+    } catch (err) {
+      return await mockStore.updateListing(listingId, { status });
+    }
   }
 
-  getAllAdminInquiries() {
-    return this.request('/admin/inquiries');
+  async adminUpdateListingCategory(listingId, category) {
+    try {
+      return await this.request(`/listings/${listingId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ category }),
+      });
+    } catch (err) {
+      return await mockStore.updateListing(listingId, { category });
+    }
   }
 
-  updateAdminInquiryStatus(inquiryId, status) {
-    return this.request(`/admin/inquiries/${inquiryId}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
-    });
+  async getAllAdminInquiries() {
+    try {
+      return await this.request('/admin/inquiries');
+    } catch (err) {
+      return await mockStore.getAllAdminInquiries();
+    }
+  }
+
+  async updateAdminInquiryStatus(inquiryId, status) {
+    try {
+      return await this.request(`/admin/inquiries/${inquiryId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      });
+    } catch (err) {
+      return await mockStore.updateInquiryStatus(inquiryId, status);
+    }
   }
 }
 

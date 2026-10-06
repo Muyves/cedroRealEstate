@@ -116,17 +116,40 @@ class MockStore {
     let user = users.find((u) => (u.email || '').toLowerCase().trim() === cleanEmail);
 
     if (!user) {
-      // Auto-fallback if testing credentials like Cedro@gmail.com
-      if (cleanEmail === 'cedro@gmail.com') {
+      // Auto-fallback for admin aliases like Cedro@gmail.com or admin@cedro.com
+      if (cleanEmail === 'cedro@gmail.com' || cleanEmail === 'admin@cedro.com' || cleanEmail === 'admin@gmail.com') {
         user = users.find((u) => u.role === 'admin') || {
           id: 1,
           email: 'Cedro@gmail.com',
-          full_name: 'Cedro Admin',
+          full_name: 'Victoria Sterling (Admin)',
           role: 'admin',
           is_active: 1,
         };
+      } else if (cleanEmail === 'seller@cedro.com' || cleanEmail === 'seller@example.com') {
+        user = users.find((u) => u.role === 'seller') || {
+          id: 2,
+          email: 'seller@cedro.com',
+          full_name: 'Marcus Vance (Seller)',
+          role: 'seller',
+          is_active: 1,
+        };
+      } else if (cleanEmail === 'buyer@cedro.com' || cleanEmail === 'buyer@example.com') {
+        user = users.find((u) => u.role === 'buyer') || {
+          id: 3,
+          email: 'buyer@cedro.com',
+          full_name: 'Elena Rostova (Buyer)',
+          role: 'buyer',
+          is_active: 1,
+        };
       } else {
-        throw new Error('Invalid email or password');
+        // Fallback demo user
+        user = {
+          id: Date.now(),
+          email: cleanEmail,
+          full_name: cleanEmail.split('@')[0],
+          role: cleanEmail.includes('admin') ? 'admin' : cleanEmail.includes('seller') ? 'seller' : 'buyer',
+          is_active: 1,
+        };
       }
     }
 
@@ -379,17 +402,33 @@ class MockStore {
     const users = this.getUsers();
     const inqs = this.getInquiries();
 
+    const landListings = list.filter((l) => (l.category || '').toLowerCase() === 'land');
+    const buildingListings = list.filter((l) => (l.category || '').toLowerCase() === 'building');
     const totalVol = list.reduce((sum, l) => sum + (Number(l.price) || 0), 0);
+    const totalAcres = landListings.reduce((sum, l) => sum + (Number(l.size_value) || Number(l.size) || 0), 0);
+    const suspendedUsers = users.filter((u) => !u.is_active || u.is_active === 0).length;
 
+    // Return nested structure matching what AdminDashboard.jsx expects
     return {
-      total_listings: list.length,
-      total_users: users.length,
-      total_inquiries: inqs.length,
-      total_volume: totalVol,
-      pending_listings: list.filter((l) => l.status === 'pending').length,
-      available_listings: list.filter((l) => l.status === 'available').length,
-      sold_listings: list.filter((l) => l.status === 'sold').length,
-      active_users: users.filter((u) => u.is_active).length,
+      listings: {
+        total: list.length,
+        total_value: totalVol,
+        land_count: landListings.length,
+        building_count: buildingListings.length,
+        total_land_acres: totalAcres.toFixed(1),
+        available: list.filter((l) => l.status === 'available').length,
+        pending: list.filter((l) => l.status === 'pending').length,
+        sold: list.filter((l) => l.status === 'sold').length,
+      },
+      users: {
+        total: users.length,
+        active: users.filter((u) => u.is_active && u.is_active !== 0).length,
+        suspended: suspendedUsers,
+      },
+      inquiries: {
+        total: inqs.length,
+        new: inqs.filter((i) => i.status === 'new').length,
+      },
     };
   }
 

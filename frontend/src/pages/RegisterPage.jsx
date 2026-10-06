@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Trees, Lock, Mail, User, Phone, ArrowRight, Briefcase, UserCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import logoImg from '../assets/gabirwa-logo.png';
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -36,7 +37,9 @@ export default function RegisterPage() {
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
-          <img src="/gabirwa-logo.png" alt="Gabirwa Real Estate" className="h-14 w-auto mx-auto" />
+          <div className="inline-flex p-3 rounded-2xl bg-white shadow-sm border border-slate-200 mx-auto mb-1">
+            <img src={logoImg} alt="Gabirwa Real Estate" className="h-12 w-auto object-contain mx-auto" />
+          </div>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Create Gabirwa Account</h1>
           <p className="text-xs text-slate-500">Join the specialized land &amp; building marketplace</p>
         </div>

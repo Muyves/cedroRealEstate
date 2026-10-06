@@ -78,7 +78,7 @@ export function SocialMediaLinks({ variant = "default", className = "" }) {
     },
     {
       name: "WhatsApp",
-      href: "https://wa.me/256700000000",
+      href: "https://wa.me/250782024578",
       icon: IconWhatsapp,
       color: "hover:bg-[#25D366] hover:text-white",
       badgeColor: "bg-emerald-600 text-white"

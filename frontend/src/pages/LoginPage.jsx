@@ -16,6 +16,7 @@ import {
   Info
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import logoImg from '../assets/gabirwa-logo.png';
 
 export default function LoginPage() {
   const { login, demoLogin } = useAuth();
@@ -139,7 +140,7 @@ export default function LoginPage() {
         {/* Brand Header */}
         <div className="text-center space-y-2">
           <div className="inline-flex p-3 rounded-2xl bg-white shadow-sm border border-slate-200 mb-1">
-            <img src="/gabirwa-logo.png" alt="Gabirwa Real Estate" className="h-12 w-auto" />
+            <img src={logoImg} alt="Gabirwa Real Estate" className="h-12 w-auto object-contain" />
           </div>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
             {portalMode === 'admin' ? 'Administrator Security Portal' : 'Sign In to Gabirwa'}

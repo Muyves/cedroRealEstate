@@ -89,8 +89,8 @@ export default function SupportWidget() {
     {
       q: language === 'rw' ? 'Kuvugana n\'Abakozi?' : 'Talk to Human Agent',
       a: language === 'rw'
-        ? 'Aba ejenti bacu bahari 24/7! Urashobora kubahamagara kuri +256 700 000 000 cyangwa ukoresheje WhatsApp chatbox.'
-        : 'Our agents are available 24/7! You can call +256 700 000 000 or tap the WhatsApp tab to chat directly.'
+        ? 'Aba ejenti bacu bahari 24/7! Urashobora kubahamagara kuri +250 782 024 578 cyangwa ukoresheje WhatsApp chatbox.'
+        : 'Our agents are available 24/7! You can call +250 782 024 578 or tap the WhatsApp tab to chat directly.'
     }
   ];
 
@@ -107,7 +107,7 @@ export default function SupportWidget() {
 
   const handleOpenWhatsapp = () => {
     const textToSend = customMsg.trim() || (language === 'rw' ? 'Muraho Gabirwa Real Estate!' : 'Hello Gabirwa Real Estate!');
-    const url = `https://wa.me/256700000000?text=${encodeURIComponent(textToSend)}`;
+    const url = `https://wa.me/250782024578?text=${encodeURIComponent(textToSend)}`;
     window.open(url, '_blank');
   };
 
@@ -130,7 +130,7 @@ export default function SupportWidget() {
     setTimeout(() => {
       let botResponse = language === 'rw'
         ? 'Urakoze ku message yawe! Umukozi wacu wa serivisi arakugera kure mu minota mike. Urashobora no kuva mu majwi ukoresheje WhatsApp wetu.'
-        : 'Thank you for your inquiry! Our customer support team has received your message. You can also connect with an agent instantly via WhatsApp or call +256 700 000 000.';
+        : 'Thank you for your inquiry! Our customer support team has received your message. You can also connect with an agent instantly via WhatsApp or call +250 782 024 578.';
 
       // Check if matches FAQ
       const matchedFaq = faqOptions.find(f => f.q.toLowerCase() === text.toLowerCase());
@@ -401,7 +401,7 @@ export default function SupportWidget() {
                 <IconYoutube className="w-3.5 h-3.5" />
               </a>
               <a
-                href="https://wa.me/256700000000"
+                href="https://wa.me/250782024578"
                 target="_blank"
                 rel="noreferrer"
                 title="WhatsApp"

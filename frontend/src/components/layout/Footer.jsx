@@ -4,6 +4,7 @@ import { Mail, Phone, MapPin, ArrowUpRight, ShieldCheck, Headphones } from 'luci
 import { useSettings } from '../../context/SettingsContext';
 import translations from '../../context/translations';
 import { SocialMediaLinks, IconWhatsapp } from '../common/SocialIcons';
+import logoImg from '../../assets/gabirwa-logo.png';
 
 export default function Footer() {
   const { language } = useSettings();
@@ -18,8 +19,10 @@ export default function Footer() {
 
           {/* Brand Col & Social Media Network Links */}
           <div className="lg:col-span-2 space-y-4">
-            <Link to="/" className="flex items-center gap-2.5">
-              <img src="/gabirwa-logo.png" alt="Gabirwa Real Estate" className="h-16 w-auto object-contain brightness-0 invert" />
+            <Link to="/" className="inline-flex items-center">
+              <div className="p-1 sm:p-1.5 rounded-xl bg-white shadow-sm inline-flex items-center justify-center">
+                <img src={logoImg} alt="Gabirwa Real Estate" className="h-12 sm:h-14 w-auto object-contain" />
+              </div>
             </Link>
             <p className="text-sm leading-relaxed text-slate-400 max-w-sm">{t.footerDesc}</p>
             
@@ -75,11 +78,11 @@ export default function Footer() {
             <ul className="space-y-3 text-sm mb-4">
               <li className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 text-yellow-500 shrink-0 mt-0.5" />
-                <span>Kampala, Uganda</span>
+                <span>Kigali, Rwanda</span>
               </li>
               <li className="flex items-center gap-2.5">
                 <Phone className="w-4 h-4 text-yellow-500 shrink-0" />
-                <a href="tel:+256700000000" className="hover:text-white transition">+256 700 000 000</a>
+                <a href="tel:+250782024578" className="hover:text-white transition">+250 782 024 578</a>
               </li>
               <li className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-yellow-500 shrink-0" />
@@ -89,7 +92,7 @@ export default function Footer() {
 
             {/* Direct WhatsApp Callout Button */}
             <a
-              href="https://wa.me/256700000000?text=Hello%20Gabirwa%20Real%20Estate"
+              href="https://wa.me/250782024578?text=Hello%20Gabirwa%20Real%20Estate"
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow transition"

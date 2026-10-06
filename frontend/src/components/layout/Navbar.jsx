@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
 import translations from '../../context/translations';
+import logoImg from '../../assets/gabirwa-logo.png';
 import {
   Trees,
   Building2,
@@ -132,12 +133,23 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
 
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <img
-              src="/gabirwa-logo.png"
-              alt="Gabirwa Real Estate"
-              className="h-12 w-auto object-contain group-hover:scale-105 transition-transform dark:brightness-90"
-            />
+          <Link to="/" className="flex items-center group py-1">
+            <div className="relative flex items-center justify-center p-1 sm:p-1.5 rounded-xl bg-white shadow-sm border border-slate-200/90 dark:border-slate-700 transition group-hover:shadow-md">
+              <img
+                src={logoImg}
+                alt="Gabirwa Real Estate"
+                className="h-10 sm:h-12 w-auto object-contain group-hover:scale-105 transition-transform"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  const fb = document.getElementById('navbar-brand-fb');
+                  if (fb) fb.classList.remove('hidden');
+                }}
+              />
+              <div id="navbar-brand-fb" className="hidden flex items-center gap-1.5 px-2 py-1">
+                <Building2 className="w-5 h-5 text-[#1a2744]" />
+                <span className="font-extrabold text-xs text-[#1a2744]">GABIRWA</span>
+              </div>
+            </div>
           </Link>
 
           {/* Center Navigation Links */}

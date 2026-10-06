@@ -49,8 +49,8 @@ export default function SupportPage() {
     {
       q: language === 'rw' ? 'Vugana na Serivisi y\'Abakiriya kuri WhatsApp?' : 'Can I chat directly with Customer Support via WhatsApp?',
       a: language === 'rw'
-        ? 'Yego! Urashobora gukanda ku bouton ya WhatsApp iri ku rubuga cyangwa ugahamagara +256 700 000 000 igihe cyose.'
-        : 'Yes! You can launch the floating WhatsApp widget at the bottom right of the screen or message +256 700 000 000 anytime for instant responses.'
+        ? 'Yego! Urashobora gukanda ku bouton ya WhatsApp iri ku rubuga cyangwa ugahamagara +250 782 024 578 igihe cyose.'
+        : 'Yes! You can launch the floating WhatsApp widget at the bottom right of the screen or message +250 782 024 578 anytime for instant responses.'
     },
     {
       q: language === 'rw' ? 'Nigute nshobora kwandikisha inzu cyangwa ubutaka bwanjye?' : 'How can I register as a seller and list my property?',
@@ -102,13 +102,13 @@ export default function SupportPage() {
             </p>
           </div>
           <a
-            href="https://wa.me/256700000000?text=Hello%20Gabirwa%20Real%20Estate%20Support"
+            href="https://wa.me/250782024578?text=Hello%20Gabirwa%20Real%20Estate%20Support"
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition"
           >
             <IconWhatsapp className="w-4 h-4" />
-            <span>+256 700 000 000</span>
+            <span>+250 782 024 578</span>
           </a>
         </div>
 
@@ -126,11 +126,11 @@ export default function SupportPage() {
             </p>
           </div>
           <a
-            href="tel:+256700000000"
+            href="tel:+250782024578"
             className="inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#1a2744] dark:bg-slate-800 text-white font-bold text-xs hover:bg-[#243050] transition"
           >
             <Phone className="w-3.5 h-3.5" />
-            <span>{language === 'rw' ? 'Hamagara Nonaha' : 'Call Support'}</span>
+            <span>+250 782 024 578</span>
           </a>
         </div>
 
@@ -258,7 +258,7 @@ export default function SupportPage() {
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="+256 700 000 000"
+                    placeholder="+250 782 024 578"
                     className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-yellow-500 outline-none"
                   />
                 </div>

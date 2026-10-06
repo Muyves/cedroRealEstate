@@ -19,18 +19,7 @@ export default function ProtectedRoute({ children, allowedRoles = [] }) {
   }
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
-    return (
-      <div className="max-w-xl mx-auto my-16 p-8 bg-white rounded-2xl shadow-sm border border-slate-200 text-center">
-        <h2 className="text-xl font-bold text-slate-900 mb-2">Access Restricted</h2>
-        <p className="text-slate-600 mb-6">
-          This portal requires role permission ({allowedRoles.join(' or ')}). Your current role is{' '}
-          <strong className="capitalize">{user?.role}</strong>.
-        </p>
-        <div className="flex justify-center gap-4">
-          <Navigate to="/" replace />
-        </div>
-      </div>
-    );
+    return <Navigate to="/" replace />;
   }
 
   return children;
